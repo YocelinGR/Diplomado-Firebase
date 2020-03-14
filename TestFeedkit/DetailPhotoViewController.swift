@@ -80,14 +80,13 @@ class DetailPhotoViewController: UIViewController {
         // formato del archivo
         uploadMetaData.contentType = "image/jpeg"
         userImageReference.putData(imagen, metadata: uploadMetaData) {(storageMetadata, error) in
-            activityIndicator.stopAnimating()
-            activityIndicator.removeFromSuperview()
             
             if let error = error{
                 print("error", error.localizedDescription)
             } else {
                 print(storageMetadata?.path)
             }
+        }
     }
 }
 //NSPhoto
