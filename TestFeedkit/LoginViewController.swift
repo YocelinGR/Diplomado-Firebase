@@ -7,8 +7,12 @@
 //
 
 import UIKit
+import Firebase
 
 class LoginViewController: UIViewController {
+    
+    @IBOutlet weak var emailTF: UITextField!
+    @IBOutlet weak var passwordTF: UITextField!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,5 +30,33 @@ class LoginViewController: UIViewController {
         // Pass the selected object to the new view controller.
     }
     */
+    @IBAction func login(_ sender: UIButton){
+        guard let email = emailTF.text, email != "", let password = passwordTF.text, password != "" else {
+            return
+        }
+        
+        Auth.auth().signIn(withEmail: email, password: password) {(result, error) in
+            if let error = error {
+                print(error.localizedDescription)
+                return
+            } else{
+                print("Usuario autenticado")
+                // segue programado
+                // funciona si esta conectado: self.performSegue(withIdentifier: "welcomeView", sender: self)
+                
+                let welcomeView = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(identifier: "WelcomeViewController") as? WelcomeViewController
+                
+                //aparece de abajo a arriba
+                //self.present(welcomeView!, animated: true, completion: nil)
+                self.navigationController?.pushViewController(welcomeView!, animated: true)
+                self.dismiss(animated: true){
+                    self.navigationController?.pushViewController(welcomeView!, animated: true)
+                }
+            }
+        }
+    }
+    @IBAction func cancel(_ sender: UIButton){
+        dismiss(animated: true, completion: nil)
+    }
 
 }

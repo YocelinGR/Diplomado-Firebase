@@ -5,13 +5,14 @@
 //  Created by Yocelin D-5 on 13/03/20.
 //  Copyright © 2020 Yocelin D-5. All rights reserved.
 //
+// diferencia entre adaptativo y responsivo
 
 import UIKit
 
-private let reuseIdentifier = "Cell"
+private let reuseIdentifier = "Celda"
 
 class PhotoCollectionViewController: UICollectionViewController {
-
+    var urlList: [String] = []
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -19,10 +20,12 @@ class PhotoCollectionViewController: UICollectionViewController {
         // self.clearsSelectionOnViewWillAppear = false
 
         // Register cell classes
-        self.collectionView!.register(UICollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-
+        self.collectionView!.register(PhotoCollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView.delegate = self
+        getPhotos()
         // Do any additional setup after loading the view.
     }
+    
 
     /*
     // MARK: - Navigation
@@ -38,20 +41,30 @@ class PhotoCollectionViewController: UICollectionViewController {
 
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 0
+        return 1
     }
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of items
-        return 0
+        return urlList.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! PhotoCollectionViewCell
     
-        // Configure the cell
-    
+        // cell.backgroundColor = .systemGreen
+        //cell.photoView.image = UIImage(named: "pofile")
+        let url = urlList[indexPath.item]
+        let urlPhoto = URL(string: url)!
+        URLSession.shared.dataTask(with: urlPhoto){(data, _, _) in
+            guard let data = data else {
+                return
+            }
+            DispatchQueue.main.async{
+                cell.photoView.image = UIImage(data: data)
+            }
+        }.resume()
         return cell
     }
 
@@ -85,5 +98,54 @@ class PhotoCollectionViewController: UICollectionViewController {
     
     }
     */
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath){
+        
+        let cell = collectionView.cellForItem(at: indexPath) as! PhotoCollectionViewCell
+        
+        let detailView = DetailPhotoViewController()
+        detailView.imagen = cell.photoView.image
+        
+        //present(detailPhotoviewController, animated: true)
+        navigationController?.pushViewController(detailView, animated: true)
+    }
+    
+    func getPhotos(){
+        let urlFlickr = "https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=92cc614191f1002da82757aee565ac31&tags=tool&format=json&nojsoncallback=1"
+        
+        let url = URL(string: urlFlickr)
+        
+        let jsondecoder = JSONDecoder()
+        
+        URLSession.shared.dataTask(with: url!) { (data, response, error) in
+            if let error = error{
+                print(error.localizedDescription)
+                return
+            }
+            
+            if let data = data, let results = try? jsondecoder.decode(ResultSearch.self, from: data){
+                let photos = results.photos.photo
+                var temp:[String] = []
+                for photo in photos{
+                    let url = "https://farm\(photo.farm).staticflickr.com/\(photo.server)/\(photo.id)_\(photo.secret)_b.jpg"
+                    temp.append(url)
+                }
+                self.urlList = temp
+                DispatchQueue.main.async{
+                    self.collectionView.reloadData()
+                }
+            }
+        }.resume()
+    }
 
+}
+
+
+extension PhotoCollectionViewController: UICollectionViewDelegateFlowLayout{
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: 100, height: 100)
+    }
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+    }
+    
 }
